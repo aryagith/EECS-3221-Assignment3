@@ -246,10 +246,11 @@ void *display_alarm_thread(void *arg) {
 }
 void *group_display_creation_thread(void *arg) {
     while (1) {
-        pthread_mutex_lock(&alarm_mutex); // Lock the mutex to access the alarm list
-
+        
         // Wait until the alarm list is updated
         pthread_cond_wait(&alarm_cond, &alarm_mutex);
+
+        pthread_mutex_lock(&alarm_mutex); // Lock the mutex to access the alarm list
 
         alarm_t *current = alarm_list; // Pointer to traverse the alarm list
 
