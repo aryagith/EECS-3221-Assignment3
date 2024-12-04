@@ -336,8 +336,6 @@ void *group_display_removal_thread(void *arg) {
     return NULL;
 }
 
-
-
 int main (int argc, char *argv[])
 {
     int status;
@@ -422,7 +420,43 @@ int main (int argc, char *argv[])
             printf("  Alarm ID: %d\n", alarm_id);
         }
     } else if (strcmp(input, "View_Alarms\n") == 0) {
-        printf("View Alarms Request\n");
+        printf("View Alarms at ");
+    
+        char time_buffer[64];
+        get_current_time(time_buffer, sizeof(time_buffer));
+        printf("%s:\n", time_buffer);
+
+        pthread_mutex_lock(&alarm_mutex);  //Lock the mutex to safely access the alarm list
+    
+        //Iterate over all active groups with display threads and their alarms
+        for (int group_id = 0; group_id < MAX_GROUPS; group_id++) {
+          if (active_group_threads[group_id] == 1) {  //Check if there's an active display thread for this group
+            //Print the display thread info
+            printf("%d. Display Thread %ld Assigned:\n", group_id + 1, group_id);
+
+            alarm_t *current = alarm_list;  //Pointer to traverse the alarm list
+            int alarm_count = 0;
+
+            // Traverse through the alarm list and print the alarms assigned to this group
+            while (current != NULL) {
+                if (current->groupId == group_id) {  // Check if the alarm belongs to this group
+                    alarm_count++;
+                    char assign_time_buffer[64];
+                    get_current_time(assign_time_buffer, sizeof(assign_time_buffer));
+                    printf(" %da. Alarm(%d): Created at %s Assigned at %s %s Status: Active\n",
+                           alarm_count, current->id, time_buffer, assign_time_buffer, current->message);
+                }
+                current = current->link;  //Move to the next alarm in the list
+            }
+
+            //If no alarms assigned to this group, we can indicate that as well
+            if (alarm_count == 0) {
+                printf(" No alarms assigned to this thread.\n");
+            }
+        }
+    }
+
+    pthread_mutex_unlock(&alarm_mutex);  // Unlock the mutex after processing the list
     } else {
         handle_invalid_request();
     }
